@@ -17,8 +17,7 @@ const config = {
     'Matter': '#05d9e8',
     'Earth & Environment': '#00ff9f',
     'Information': '#d1f7ff',
-    'Space': '#7700ff',
-    'Transport': '#ffb86c',
+    'Space & Transport': '#ffb86c',
     'Default': '#888888'
   },
   axes: [
@@ -29,7 +28,7 @@ const config = {
     { id: 'scale_spatial', label: 'SCALE', 
       values: ['Nano', 'Micro', 'Milli', 'Macro', 'Kilo', 'Cosmic'] },
     { id: 'topology', label: 'TOPOLOGY', 
-      values: ['Raster (2D)', 'Voxel (3D)', 'Point Cloud', 'Graph/Relational', 'Sparse Events', 'Function/Model'] },
+      values: ['Raster (2D)', 'Voxel (3D)', 'Point Cloud', 'Mesh', 'Graph/Relational', 'Sparse Events', 'Function/Model'] },
     { id: 'density', label: 'DENSITY', 
       values: ['Scalar', 'Vector', 'Vector (x,y,t,p)', 'Tensor', 'Spectral', 'Complex (Phase/Amp)', 'Graph'] }
   ]
@@ -132,7 +131,7 @@ function renderNeonPlot(data) {
       pathD += ` C ${cp1x} ${prevY}, ${cp2x} ${y}, ${x} ${y}`;
     });
 
-    // A. VISUAL PATH (Thin, Neon)
+    // A. VISUAL PATH
     const visualPath = createSVG(svg, 'path', {
       d: pathD,
       class: 'data-path highlighted',
@@ -141,23 +140,16 @@ function renderNeonPlot(data) {
       'data-id': idx
     });
 
-    // *** ENTRANCE ANIMATION ***
-    // 1. Get total length of the line
+    // Entrance Animation
     const length = visualPath.getTotalLength();
-    // 2. Set the dasharray and offset to the length (hides line)
     visualPath.style.strokeDasharray = length;
     visualPath.style.strokeDashoffset = length;
-    
-    // 3. Trigger layout reflow to ensure start state is rendered
     visualPath.getBoundingClientRect();
-    
-    // 4. Animate to 0 offset (draws line)
-    // We add a slight random delay so they don't all start exactly at once
     setTimeout(() => {
       visualPath.style.strokeDashoffset = '0';
-    }, idx * 10); // 10ms stagger per line
+    }, idx * 10);
 
-    // B. GHOST PATH (Thick, Invisible, Interactive)
+    // B. GHOST PATH
     const hitPath = createSVG(svg, 'path', {
       d: pathD,
       class: 'hit-path',
@@ -168,7 +160,7 @@ function renderNeonPlot(data) {
     attachEvents(hitPath, item, color, idx);
   });
 
-  // 3. LABELS (Foreground)
+  // 3. LABELS
   config.axes.forEach((axis, i) => {
     const x = getX(i);
     createSVG(svg, 'text', { x: x, y: margin.top - 25, class: 'axis-label' }).textContent = axis.label;
@@ -190,7 +182,7 @@ function renderNeonPlot(data) {
       class: 'name-label',
       'text-anchor': 'end',
       'data-id': idx,
-      'data-domain': item.domain // Store domain for filtering
+      'data-domain': item.domain 
     });
     textEl.textContent = item.name;
     
@@ -203,19 +195,15 @@ function renderNeonPlot(data) {
 
 function attachEvents(el, item, color, idx) {
   const triggerHover = (e) => {
-    // Dim all visual paths (but not the hit paths, those stay invisible)
     document.querySelectorAll('.data-path').forEach(p => p.classList.add('dimmed'));
     document.querySelectorAll('.name-label').forEach(l => l.style.opacity = 0.3);
     
-    // Highlight specific ID
     const path = document.querySelector(`.data-path[data-id="${idx}"]`);
     const label = document.querySelector(`.name-label[data-id="${idx}"]`);
     
     if (path) {
       path.classList.remove('dimmed');
       path.classList.add('active-hover');
-      // Ensure highlighted line moves to visual top (optional in SVG)
-      // path.parentElement.appendChild(path); 
     }
     if (label) {
       label.style.opacity = 1;
@@ -266,7 +254,6 @@ function filterGraph(domain, btn) {
   const hitPaths = document.querySelectorAll('.hit-path');
   const labels = document.querySelectorAll('.name-label');
 
-  // Helper to toggle class based on domain
   const updateVisibility = (elements, isText) => {
     elements.forEach(el => {
       const d = el.getAttribute('data-domain');
@@ -283,7 +270,7 @@ function filterGraph(domain, btn) {
   };
 
   updateVisibility(visualPaths, false);
-  updateVisibility(hitPaths, false); // Ghost paths must also "leave" to avoid invisible clicks
+  updateVisibility(hitPaths, false); 
   updateVisibility(labels, true);
 }
 
@@ -291,7 +278,6 @@ const tooltip = document.getElementById('neon-tooltip');
 
 function showTooltip(e, item, color) {
   tooltip.style.display = 'block';
-  // Use timeout to allow display:block to render before adding opacity class
   requestAnimationFrame(() => {
     tooltip.classList.add('tooltip-visible');
   });
@@ -327,7 +313,6 @@ function clearHover() {
     l.style.fill = '#aaa'; 
   });
   
-  // Fade out tooltip
   tooltip.classList.remove('tooltip-visible');
   setTimeout(() => {
     if (!tooltip.classList.contains('tooltip-visible')) {

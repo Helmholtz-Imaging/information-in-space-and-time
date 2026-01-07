@@ -1,55 +1,100 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Helmholtz Universal Imaging Atlas - Schema",
-  "description": "Schema for categorizing imaging techniques across five dimensions",
-  "type": "object",
-  "properties": {
-    "name": {
-      "type": "string",
-      "description": "Common name of the modality"
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Helmholtz Universal Imaging Atlas - Schema",
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "domain": {
+        "type": "string",
+        "description": "Helmholtz Research Field (Health, Matter, Information, Earth & Environment, Space, Transport)"
+      },
+      "physics_carrier": {
+        "type": "string",
+        "enum": [
+          "Photon",
+          "Electron",
+          "Neutron",
+          "Ion",
+          "Magnetic Field",
+          "Electric Field",
+          "Acoustic",
+          "Mechanical",
+          "Gravitational Field"
+        ],
+        "description": "Dimension 1: The physical entity carrying the information."
+      },
+      "scale_spatial": {
+        "type": "string",
+        "enum": [
+          "Nano",
+          "Micro",
+          "Milli",
+          "Macro",
+          "Kilo",
+          "Cosmic"
+        ],
+        "description": "Dimension 2: Logarithmic scale of the target."
+      },
+      "topology": {
+        "type": "string",
+        "enum": [
+          "Raster (2D)",
+          "Voxel (3D)",
+          "Point Cloud",
+          "Mesh",
+          "Graph",
+          "Sparse Events",
+          "Function"
+        ],
+        "description": "Dimension 3: The data structure."
+      },
+      "density": {
+        "type": "string",
+        "enum": [
+          "Scalar",
+          "Vector",
+          "Tensor",
+          "Spectral",
+          "Complex",
+          "Graph"
+        ],
+        "description": "Dimension 4: The value type per data point."
+      },
+      "mechanism": {
+        "type": "string",
+        "enum": [
+          "Passive",
+          "Active",
+          "Transmission",
+          "Excitation"
+        ],
+        "description": "Dimension 5: The acquisition interaction."
+      },
+      "spectral_range": {
+        "type": "string",
+        "description": "Free text detail (e.g. 'Visible', 'X-Ray')"
+      },
+      "time_dependence": {
+        "type": "string",
+        "enum": [
+          "Static",
+          "Dynamic",
+          "Time-Lapse"
+        ]
+      },
+      "description": {
+        "type": "string"
+      }
     },
-    "domain": {
-      "type": "string",
-      "description": "The primary scientific field (for filtering)"
-    },
-    "physics_carrier": {
-      "type": "string",
-      "enum": ["Photon", "Electron", "Neutron", "Magnetic Field", "Acoustic", "Gravitational Field", "Mechanical", "Particle"],
-      "description": "Dimension 1: What carries the info?"
-    },
-    "spectral_range": {
-      "type": "string",
-      "description": "Specific energy band (if applicable), e.g., Visible, X-Ray, Radio, Ultrasonic, n/a"
-    },
-    "scale_spatial": {
-      "type": "string",
-      "enum": ["Nano", "Micro", "Milli", "Macro", "Kilo", "Cosmic"],
-      "description": "Dimension 2: Logarithmic scale of target"
-    },
-    "topology": {
-      "type": "string",
-      "enum": ["Raster (2D)", "Voxel (3D)", "Point Cloud", "Mesh", "Tensor Field", "Sparse Events", "Graph/Relational", "Function/Model"],
-      "description": "Dimension 3: Data structure"
-    },
-    "density": {
-      "type": "string",
-      "enum": ["Scalar", "Vector", "Tensor", "Spectral", "Complex (Phase/Amp)", "Vector (x,y,t,p)", "Graph"],
-      "description": "Dimension 4: Information type"
-    },
-    "mechanism": {
-      "type": "string",
-      "enum": ["Passive", "Active", "Transmission", "Excitation"],
-      "description": "Dimension 5: Acquisition type"
-    },
-    "time_dependence": {
-      "type": "string",
-      "enum": ["Static", "Dynamic", "Time-Lapse"],
-      "description": "Is time usually captured?"
-    },
-    "description": {
-      "type": "string",
-      "description": "Short explanation of the imaging technique"
-    }
-  },
-  "required": ["name", "domain", "physics_carrier", "scale_spatial", "topology", "density", "mechanism", "description"]
-}
+    "required": [
+      "name",
+      "domain",
+      "physics_carrier",
+      "scale_spatial",
+      "topology",
+      "density",
+      "mechanism"
+    ]
+  }

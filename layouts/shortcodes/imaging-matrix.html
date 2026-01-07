@@ -1,5 +1,3 @@
-{{ $csvPath := "imaging_atlas.csv" | relURL }}
-
 <div class="neon-atlas-wrapper">
   
   <div class="controls-row">
@@ -39,7 +37,7 @@ const config = {
 
 let rawData = [];
 
-fetch('{{ $csvPath }}')
+fetch('imaging_atlas.csv')
   .then(r => r.text())
   .then(csv => {
     rawData = parseCSV(csv);

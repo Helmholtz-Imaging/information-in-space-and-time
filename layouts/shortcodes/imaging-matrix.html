@@ -484,12 +484,13 @@ function highlightByAxisValue(axisId, value) {
     if (shouldHighlight) {
       const ribbon = document.querySelector(`.data-ribbon[data-id="${idx}"]`);
       const label = document.querySelector(`.name-label[data-id="${idx}"]`);
-      if (ribbon) {
+      // Only show if ribbon is not faded-out (i.e., belongs to selected domain, or "All" is selected)
+      if (ribbon && !ribbon.classList.contains('faded-out')) {
         ribbon.style.fillOpacity = '';
         ribbon.classList.remove('dimmed');
         ribbon.classList.add('active-hover');
       }
-      if (label) {
+      if (label && !label.classList.contains('text-faded-out')) {
         label.style.opacity = '1';
         label.style.fill = '#000';
       }

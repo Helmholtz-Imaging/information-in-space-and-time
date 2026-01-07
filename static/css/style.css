@@ -1,16 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 
 :root {
-    --bg-deep: #05050500; 
+    --bg-deep: #ffffff; 
     --text-bright: #ffffff;
-    --text-dim: #888;
-    --line-inactive: #1a1a1a;
+    --text-dim: #333;
+    --line-inactive: #e0e0e0;
 
     /* Neon Palette */
     --c-health: #ff2a6d;      
     --c-matter: #05d9e8;      
     --c-earth: #00ff9f;       
-    --c-info: #d1f7ff;        
+    --c-info: #0099cc;        
     --c-space: #ffb86c;
     --c-default: #888;
 }
@@ -18,13 +18,13 @@
 body {
     margin: 0;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
-    background-color: #050505;
+    background-color: #ffffff;
     color: var(--text-bright);
 }
 
 main {
     max-width: 100%;
-    padding: 0 20px;
+    padding: 0;
 }
 
 header {
@@ -38,11 +38,10 @@ header h1 {
     font-size: clamp(1.5rem, 5vw, 3.5rem);
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    background: linear-gradient(120deg, var(--c-info), var(--c-health), var(--c-space));
+    background: linear-gradient(200deg, var(--c-info), var(--c-health), var(--c-space));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    filter: drop-shadow(0 0 18px rgba(5, 217, 232, 0.35));
     white-space: normal;
 }
 
@@ -57,7 +56,6 @@ header h1 {
 .controls-row {
     margin-bottom: 30px;
     padding-left: 10px;
-    border-bottom: 1px solid #1a1a1a;
     padding-bottom: 15px;
 }
 
@@ -69,7 +67,7 @@ header h1 {
 
 .filter-pill {
     background: transparent;
-    border: 1px solid #333;
+    border: 1px solid #ccc;
     color: #666;
     padding: 6px 14px;
     font-size: 1.15rem;
@@ -83,8 +81,8 @@ header h1 {
 .filter-pill:hover,
 .filter-pill.active {
     border-color: currentColor;
-    color: #fff !important;
-    background: rgba(255, 255, 255, 0.05);
+    color: #000 !important;
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .viz-stage {
@@ -93,71 +91,70 @@ header h1 {
 }
 
 .axis-line {
-    stroke: #333;
+    stroke: #a0a0a0;
     stroke-width: 1;
     stroke-dasharray: 2 4;
 }
 
 .axis-label {
-    fill: #aaa;
+    fill: #000;
     font-size: 1.15rem;
     font-weight: 800;
     letter-spacing: 1.5px;
     text-anchor: middle;
-    stroke: #050505;
-    stroke-width: 4px;
+    stroke: #ffffff;
+    stroke-width: 3px;
     paint-order: stroke fill;
 }
 
 .tick-label {
-    fill: #ddd;
+    fill: #000;
     font-size: 15px;
     cursor: default;
     transition: fill 0.2s;
     font-weight: 600;
-    stroke: #00000050;
-    stroke-width: 15px;
+    stroke: #ffffff;
+    stroke-width: 3px;
     paint-order: stroke fill;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
 
 .tick-label:hover {
-    fill: #fff;
+    fill: #000;
 }
 
 .name-label {
     font-size: 15px;
-    fill: #aaa;
+    fill: #000;
     cursor: pointer;
     transition: opacity 0.5s ease, fill 0.3s ease;
     alignment-baseline: middle;
+    stroke: #ffffff;
+    stroke-width: 0px;
+    paint-order: stroke fill;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .name-label:hover {
-    fill: #fff;
+    fill: #000;
     font-weight: bold;
 }
 
-.data-path {
-    fill: none;
-    stroke-linecap: round;
-    mix-blend-mode: screen;
-    pointer-events: none;
-    transition: stroke-opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-                stroke-width 0.4s ease,
-                stroke-dashoffset 2s ease-in-out;
-}
-
-.hit-path {
-    fill: none;
-    stroke: transparent;
-    stroke-width: 20px;
+.data-ribbon {
+    mix-blend-mode: normal;
     cursor: pointer;
-    pointer-events: stroke;
+    pointer-events: all;
+    filter: drop-shadow(0 0 3px currentColor);
+    transition: fill-opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                stroke-opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                stroke-dashoffset 2s ease-in-out,
+                filter 0.3s ease;
 }
 
 .faded-out {
+    fill-opacity: 0 !important;
     stroke-opacity: 0 !important;
     pointer-events: none !important;
 }
@@ -168,40 +165,19 @@ header h1 {
 }
 
 .dimmed {
-    stroke: var(--line-inactive) !important;
-    stroke-opacity: 0.1;
-    stroke-width: 1;
+    fill-opacity: 0.1 !important;
+    stroke-opacity: 0.2 !important;
 }
 
 .highlighted {
-    stroke-opacity: 0.6;
-    stroke-width: 1.5;
+    fill-opacity: 0.4;
+    stroke-opacity: 0.8;
 }
 
 .active-hover {
+    fill-opacity: 0.7 !important;
     stroke-opacity: 1 !important;
-    stroke-width: 3 !important;
     filter: drop-shadow(0 0 8px currentColor);
-}
-
-.tooltip-box {
-    position: absolute;
-    display: none;
-    background: rgba(10, 10, 15, 0.98);
-    border: 1px solid #555;
-    padding: 15px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    pointer-events: none;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 1);
-    width: 280px;
-    z-index: 9999;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.tooltip-visible {
-    opacity: 1;
 }
 
 @media (max-width: 768px) {

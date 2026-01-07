@@ -16,7 +16,7 @@ const config = {
     'Health': '#ff2a6d',
     'Matter': '#05d9e8',
     'Earth & Environment': '#00ff9f',
-    'Information': '#d1f7ff',
+    'Information': '#0099cc',
     'Space & Transport': '#ffb86c',
     'Default': '#888888'
   },
@@ -28,9 +28,9 @@ const config = {
     { id: 'scale_spatial', label: 'SCALE', 
       values: ['Nano', 'Micro', 'Milli', 'Macro', 'Kilo', 'Cosmic'] },
     { id: 'topology', label: 'TOPOLOGY', 
-      values: ['Raster (2D)', 'Voxel (3D)', 'Point Cloud', 'Mesh', 'Graph/Relational', 'Sparse Events', 'Function/Model'] },
+      values: ['Raster (2D)', 'Voxel (3D)', 'Point Cloud', 'Graph/Relational', 'Sparse Events', 'Function/Model'] },
     { id: 'density', label: 'DENSITY', 
-      values: ['Scalar', 'Vector', 'Vector (x,y,t,p)', 'Tensor', 'Spectral', 'Complex (Phase/Amp)', 'Graph'] }
+      values: ['Scalar', 'Vector', 'Tensor', 'Spectral', 'Complex (Phase/Amp)', 'Graph'] }
   ]
 };
 
@@ -57,13 +57,28 @@ function parseCSV(csvText) {
   return lines.slice(1).map(line => {
     const parts = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
     const clean = parts.map(p => p.replace(/"/g, '').trim());
+    // Normalize domains (merge legacy 'Space' and 'Transport' into 'Space & Transport')
+    let domain = clean[1];
+    if (domain === 'Space' || domain === 'Transport' || domain === 'Space&Transport') {
+      domain = 'Space & Transport';
+    }
+    // Normalize density: merge detailed vector into Vector
+    let density = clean[6];
+    if (density === 'Vector (x,y,t,p)') {
+      density = 'Vector';
+    }
+    // Normalize topology: treat Mesh as Point Cloud
+    let topology = clean[5];
+    if (topology === 'Mesh') {
+      topology = 'Point Cloud';
+    }
     return {
       name: clean[0],
-      domain: clean[1],
+      domain,
       physics_carrier: clean[2],
       scale_spatial: clean[4],
-      topology: clean[5],
-      density: clean[6],
+      topology,
+      density,
       mechanism: clean[7],
       description: clean[9]
     };
@@ -78,8 +93,8 @@ function renderNeonPlot(data) {
   svg.setAttribute('height', calcHeight);
 
   const width = svg.parentElement.clientWidth; 
-  const margin = { top: 60, right: 200, bottom: 40, left: 420 }; 
-  const w = width - margin.left - margin.right;
+  const margin = { top: 60, right: 200, bottom: 40, left: 520 }; // Increased left margin for more name space 
+  const w = width;
   const h = calcHeight - margin.top - margin.bottom;
 
   // Scales
@@ -98,89 +113,221 @@ function renderNeonPlot(data) {
 
   const getNameY = (index) => margin.top + (index * (h / data.length));
 
+  // 0. DEFINE SVG FILTERS (for blurred white borders)
+  const defs = createSVG(svg, 'defs', {});
+  // Blur filter for axis labels - creates blurry white border by blurring the white stroke
+  const blurFilter = createSVG(defs, 'filter', { id: 'blur-shadow', x: '-50%', y: '-50%', width: '200%', height: '200%' });
+  // Blur the entire element (including white stroke) to create blurry white border effect
+  const blurBlur = createSVG(blurFilter, 'feGaussianBlur', { in: 'SourceGraphic', stdDeviation: '2', result: 'blurred' });
+  const blurMerge = createSVG(blurFilter, 'feMerge', {});
+  createSVG(blurMerge, 'feMergeNode', { in: 'blurred' });
+  createSVG(blurMerge, 'feMergeNode', { in: 'SourceGraphic' });
+  
+  // Blur filter for tick labels - creates blurry white border by blurring the white stroke
+  const blurFilterTick = createSVG(defs, 'filter', { id: 'blur-shadow-tick', x: '-50%', y: '-50%', width: '200%', height: '200%' });
+  const blurBlurTick = createSVG(blurFilterTick, 'feGaussianBlur', { in: 'SourceGraphic', stdDeviation: '3', result: 'blurred' });
+  const blurMergeTick = createSVG(blurFilterTick, 'feMerge', {});
+  createSVG(blurMergeTick, 'feMergeNode', { in: 'blurred' });
+  createSVG(blurMergeTick, 'feMergeNode', { in: 'SourceGraphic' });
+
   // 1. BACKGROUND AXES
   config.axes.forEach((axis, i) => {
     const x = getX(i);
     createSVG(svg, 'line', { x1: x, y1: margin.top, x2: x, y2: margin.top + h, class: 'axis-line' });
   });
 
-  // 2. DATA PATHS
+  // 2. RIBBONS (smooth, interactive, variable thickness)
+  // Calculate label height based on typical font size and spacing
+  const labelHeight = 18; // Approximate label height in pixels
+  
   data.forEach((item, idx) => {
     const color = config.colors[item.domain] || config.colors['Default'];
     const startY = getNameY(idx);
-    const textGap = 120;
+    const textGap = margin.left; // Increased gap for more space between names and physics labels
     const textX = margin.left - textGap;
-    const pathStartX = textX + 15;
+    const ribbonStartX = textX; // Start at left edge of name labels
+    const ribbonEndX = getX(config.axes.length - 1) + 80; // Extend beyond last axis to cover density labels
 
-    let pathD = `M ${pathStartX} ${startY}`;
-    
+    // Calculate centerline points and ribbon thickness at each axis
+    const centers = [];
+    const halfHeights = [];
+    const axisXs = [];
+    const nameHalf = labelHeight; // Ribbon is thicker at the modality name
+
     config.axes.forEach((axis, axIdx) => {
       const x = getX(axIdx);
-      const y = yScales[axis.id](item[axis.id]);
-      let prevX, prevY;
-      if (axIdx === 0) {
-        prevX = pathStartX;
-        prevY = startY;
+      axisXs[axIdx] = x;
+      let y;
+      let half = labelHeight / 2; // Ribbon hugs the label height
+
+      if (axis.id === 'scale_spatial') {
+        const vals = axis.values;
+        const raw = item.scale_spatial || '';
+        let startIdx = -1;
+        let endIdx = -1;
+        if (raw.includes('-')) {
+          const parts = raw.split('-').map(p => p.trim());
+          startIdx = vals.indexOf(parts[0]);
+          endIdx = vals.indexOf(parts[1]);
+        } else {
+          startIdx = endIdx = vals.indexOf(raw);
+        }
+        if (startIdx === -1 || endIdx === -1) {
+          startIdx = endIdx = vals.length;
+        }
+        const step = h / (vals.length);
+        const topIdx = Math.min(startIdx, endIdx);
+        const bottomIdx = Math.max(startIdx, endIdx) + 1;
+        const centerIdx = (topIdx + bottomIdx) / 2;
+        y = margin.top + centerIdx * step;
+        
+        // If it's a range, span the full range; if single value, hug the label
+        if (startIdx === endIdx) {
+          half = labelHeight / 2; // Single value: hug the label
+        } else {
+          half = (bottomIdx - topIdx) * step / 2; // Range: span the full range
+        }
       } else {
-        prevX = getX(axIdx - 1);
-        const prevAxis = config.axes[axIdx - 1];
-        prevY = yScales[prevAxis.id](item[prevAxis.id]);
+        y = yScales[axis.id](item[axis.id]);
       }
+
+      centers[axIdx] = y;
+      halfHeights[axIdx] = half;
+    });
+
+    // Build smooth ribbon path: top edge forward, then bottom edge backward
+    let ribbonD = '';
+    
+    // Calculate first axis values once
+    const firstX = axisXs[0];
+    const firstY = centers[0];
+    const firstHalf = halfHeights[0];
+    
+    // Estimate text width (roughly 8-9px per character for monospace font at 15px size)
+    const estimatedCharWidth = 8.5;
+    const nameWidth = item.name.length * estimatedCharWidth;
+    const nameEndX = textX + nameWidth + 10; // Add padding for safety
+    
+    // Start at top-left (hugging the name label, at left edge)
+    ribbonD += `M ${ribbonStartX} ${startY - nameHalf}`;
+    
+    // Straight horizontal segment covering the full name width
+    ribbonD += ` L ${nameEndX} ${startY - nameHalf}`;
+    
+    // Smooth curve from end of name to first axis (physics)
+    const curveStartX = nameEndX;
+    const cp1xTop = curveStartX + (firstX - curveStartX) * 0.5;
+    const cp2xTop = curveStartX + (firstX - curveStartX) * 0.5;
+    ribbonD += ` C ${cp1xTop} ${startY - nameHalf}, ${cp2xTop} ${firstY - firstHalf}, ${firstX} ${firstY - firstHalf}`;
+    
+    // Top edge: follow Bezier curves forward through remaining axes
+    for (let axIdx = 1; axIdx < config.axes.length; axIdx++) {
+      const x = axisXs[axIdx];
+      const y = centers[axIdx];
+      const half = halfHeights[axIdx];
+      const prevX = axisXs[axIdx - 1];
+      const prevY = centers[axIdx - 1];
+      const prevHalf = halfHeights[axIdx - 1];
+      
+      // Control points for smooth Bezier curves
       const cp1x = prevX + (x - prevX) * 0.5;
       const cp2x = prevX + (x - prevX) * 0.5;
-      pathD += ` C ${cp1x} ${prevY}, ${cp2x} ${y}, ${x} ${y}`;
-    });
-
-    // A. VISUAL PATH
-    const visualPath = createSVG(svg, 'path', {
-      d: pathD,
-      class: 'data-path highlighted',
-      stroke: color,
-      'data-domain': item.domain,
-      'data-id': idx
-    });
-
-    // Entrance Animation
-    const length = visualPath.getTotalLength();
-    visualPath.style.strokeDasharray = length;
-    visualPath.style.strokeDashoffset = length;
-    visualPath.getBoundingClientRect();
-    setTimeout(() => {
-      visualPath.style.strokeDashoffset = '0';
-    }, idx * 10);
-
-    // B. GHOST PATH
-    const hitPath = createSVG(svg, 'path', {
-      d: pathD,
-      class: 'hit-path',
-      'data-domain': item.domain,
-      'data-id': idx
-    });
+      
+      // Top edge curve
+      ribbonD += ` C ${cp1x} ${prevY - prevHalf}, ${cp2x} ${y - half}, ${x} ${y - half}`;
+    }
     
-    attachEvents(hitPath, item, color, idx);
+    // Extend to right edge (beyond last axis to cover density labels)
+    const lastIdx = config.axes.length - 1;
+    const lastX = axisXs[lastIdx];
+    const lastY = centers[lastIdx];
+    const lastHalf = halfHeights[lastIdx];
+    // Smooth curve from last axis to right edge
+    const cp1xRight = lastX + (ribbonEndX - lastX) * 0.5;
+    const cp2xRight = lastX + (ribbonEndX - lastX) * 0.5;
+    ribbonD += ` C ${cp1xRight} ${lastY - lastHalf}, ${cp2xRight} ${lastY - lastHalf}, ${ribbonEndX} ${lastY - lastHalf}`;
+    
+    // Go straight down at the right edge
+    ribbonD += ` L ${ribbonEndX} ${lastY + lastHalf}`;
+    
+    // Smooth curve from right edge back to last axis
+    ribbonD += ` C ${cp2xRight} ${lastY + lastHalf}, ${cp1xRight} ${lastY + lastHalf}, ${lastX} ${lastY + lastHalf}`;
+    
+    // Bottom edge: follow Bezier curves backward through axes
+    for (let axIdx = config.axes.length - 2; axIdx >= 0; axIdx--) {
+      const x = axisXs[axIdx];
+      const y = centers[axIdx];
+      const half = halfHeights[axIdx];
+      const nextX = axisXs[axIdx + 1];
+      const nextY = centers[axIdx + 1];
+      const nextHalf = halfHeights[axIdx + 1];
+      
+      // Control points (reversed for smooth backward curve)
+      const cp1x = x + (nextX - x) * 0.5;
+      const cp2x = x + (nextX - x) * 0.5;
+      
+      // Bottom edge curve (backward)
+      ribbonD += ` C ${cp1x} ${nextY + nextHalf}, ${cp2x} ${y + half}, ${x} ${y + half}`;
+    }
+    
+    // Smooth curve from first axis back to end of name
+    const cp1xBottom = curveStartX + (firstX - curveStartX) * 0.5;
+    const cp2xBottom = curveStartX + (firstX - curveStartX) * 0.5;
+    ribbonD += ` C ${cp1xBottom} ${firstY + firstHalf}, ${cp2xBottom} ${startY + nameHalf}, ${nameEndX} ${startY + nameHalf}`;
+    
+    // Straight horizontal segment back to start (left edge)
+    ribbonD += ` L ${ribbonStartX} ${startY + nameHalf} Z`;
+
+    // Create the ribbon path
+    const ribbon = createSVG(svg, 'path', {
+      d: ribbonD,
+      class: 'data-ribbon highlighted',
+      fill: color,
+      'fill-opacity': '0.4',
+      stroke: 'none',
+      'data-domain': item.domain,
+      'data-id': idx
+    });
+
+    // Entrance animation
+    const length = ribbon.getTotalLength();
+    ribbon.style.strokeDasharray = length;
+    ribbon.style.strokeDashoffset = length;
+    ribbon.style.fillOpacity = '0';
+    ribbon.getBoundingClientRect();
+    setTimeout(() => {
+      ribbon.style.strokeDashoffset = '0';
+      ribbon.style.fillOpacity = '0.4';
+    }, idx * 10);
+    
+    attachEvents(ribbon, item, color, idx);
   });
 
   // 3. LABELS
   config.axes.forEach((axis, i) => {
     const x = getX(i);
-    createSVG(svg, 'text', { x: x, y: margin.top - 25, class: 'axis-label' }).textContent = axis.label;
+    const axisLabel = createSVG(svg, 'text', { x: x, y: margin.top - 25, class: 'axis-label', filter: 'url(#blur-shadow)' });
+    axisLabel.textContent = axis.label;
     axis.values.forEach(val => {
       const y = yScales[axis.id](val);
-      createSVG(svg, 'text', { x: x + 10, y: y + 4, class: 'tick-label' }).textContent = val;
+      const tick = createSVG(svg, 'text', { x: x, y: y + 4, class: 'tick-label', 'text-anchor': 'middle', filter: 'url(#blur-shadow-tick)' });
+      tick.textContent = val;
+      tick.addEventListener('mouseenter', () => highlightByAxisValue(axis.id, val));
+      tick.addEventListener('mouseleave', clearHover);
     });
   });
 
   // Name Labels
   data.forEach((item, idx) => {
     const startY = getNameY(idx);
-    const textGap = 120;
-    const textX = margin.left - textGap;
+    const textGap = 550; // Increased gap for more space between names and physics labels
+    const textX = 20;
     
     const textEl = createSVG(svg, 'text', {
       x: textX, 
       y: startY,
       class: 'name-label',
-      'text-anchor': 'end',
+      'text-anchor': 'start',
       'data-id': idx,
       'data-domain': item.domain 
     });
@@ -195,19 +342,19 @@ function renderNeonPlot(data) {
 
 function attachEvents(el, item, color, idx) {
   const triggerHover = (e) => {
-    document.querySelectorAll('.data-path').forEach(p => p.classList.add('dimmed'));
+    document.querySelectorAll('.data-ribbon').forEach(r => r.classList.add('dimmed'));
     document.querySelectorAll('.name-label').forEach(l => l.style.opacity = 0.3);
     
-    const path = document.querySelector(`.data-path[data-id="${idx}"]`);
+    const ribbon = document.querySelector(`.data-ribbon[data-id="${idx}"]`);
     const label = document.querySelector(`.name-label[data-id="${idx}"]`);
     
-    if (path) {
-      path.classList.remove('dimmed');
-      path.classList.add('active-hover');
+    if (ribbon) {
+      ribbon.classList.remove('dimmed');
+      ribbon.classList.add('active-hover');
     }
     if (label) {
       label.style.opacity = 1;
-      label.style.fill = '#fff';
+      label.style.fill = '#000';
     }
     
     showTooltip(e, item, color);
@@ -215,6 +362,58 @@ function attachEvents(el, item, color, idx) {
 
   el.addEventListener('mouseenter', triggerHover);
   el.addEventListener('mouseleave', clearHover);
+}
+
+function highlightByAxisValue(axisId, value) {
+  document.querySelectorAll('.data-ribbon').forEach(r => r.classList.add('dimmed'));
+  document.querySelectorAll('.name-label').forEach(l => {
+    l.style.opacity = 0.3;
+    l.style.fill = '#666';
+  });
+
+  rawData.forEach((item, idx) => {
+    let shouldHighlight = false;
+    
+    if (axisId === 'scale_spatial') {
+      // For scale, check if value is in the range or matches exactly
+      const raw = item.scale_spatial || '';
+      if (raw.includes('-')) {
+        // It's a range - check if the hovered value is within the range
+        const parts = raw.split('-').map(p => p.trim());
+        const scaleAxis = config.axes.find(ax => ax.id === 'scale_spatial');
+        if (scaleAxis) {
+          const vals = scaleAxis.values;
+          const hoverIdx = vals.indexOf(value);
+          const startIdx = vals.indexOf(parts[0]);
+          const endIdx = vals.indexOf(parts[1]);
+          if (hoverIdx !== -1 && startIdx !== -1 && endIdx !== -1) {
+            const minIdx = Math.min(startIdx, endIdx);
+            const maxIdx = Math.max(startIdx, endIdx);
+            shouldHighlight = (hoverIdx >= minIdx && hoverIdx <= maxIdx);
+          }
+        }
+      } else {
+        // Single value - exact match
+        shouldHighlight = (item[axisId] === value);
+      }
+    } else {
+      // For other axes, exact match
+      shouldHighlight = (item[axisId] === value);
+    }
+    
+    if (shouldHighlight) {
+      const ribbon = document.querySelector(`.data-ribbon[data-id="${idx}"]`);
+      const label = document.querySelector(`.name-label[data-id="${idx}"]`);
+      if (ribbon) {
+        ribbon.classList.remove('dimmed');
+        ribbon.classList.add('active-hover');
+      }
+      if (label) {
+        label.style.opacity = 1;
+        label.style.fill = '#000';
+      }
+    }
+  });
 }
 
 function createSVG(parent, type, attrs) {
@@ -250,8 +449,7 @@ function filterGraph(domain, btn) {
   document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   
-  const visualPaths = document.querySelectorAll('.data-path');
-  const hitPaths = document.querySelectorAll('.hit-path');
+  const ribbons = document.querySelectorAll('.data-ribbon');
   const labels = document.querySelectorAll('.name-label');
 
   const updateVisibility = (elements, isText) => {
@@ -269,8 +467,7 @@ function filterGraph(domain, btn) {
     });
   };
 
-  updateVisibility(visualPaths, false);
-  updateVisibility(hitPaths, false); 
+  updateVisibility(ribbons, false);
   updateVisibility(labels, true);
 }
 
@@ -285,9 +482,9 @@ function showTooltip(e, item, color) {
   tooltip.style.borderColor = color;
   tooltip.innerHTML = `
     <strong style="color:${color}; font-size: 0.9rem;">${item.name}</strong>
-    <div style="margin-top:2px; color:#aaa; font-size:0.65rem;">${item.domain.toUpperCase()}</div>
-    <hr style="border:0; border-top:1px solid #333; margin:6px 0;">
-    <div style="line-height:1.3; color:#ddd;">${item.description}</div>
+    <div style="margin-top:2px; color:#666; font-size:0.65rem;">${item.domain.toUpperCase()}</div>
+    <hr style="border:0; border-top:1px solid #ccc; margin:6px 0;">
+    <div style="line-height:1.3; color:#333;">${item.description}</div>
   `;
   
   const tooltipWidth = 280; 
@@ -304,13 +501,13 @@ function showTooltip(e, item, color) {
 }
 
 function clearHover() {
-  document.querySelectorAll('.data-path').forEach(p => {
-    p.classList.remove('dimmed');
-    p.classList.remove('active-hover');
+  document.querySelectorAll('.data-ribbon').forEach(r => {
+    r.classList.remove('dimmed');
+    r.classList.remove('active-hover');
   });
   document.querySelectorAll('.name-label').forEach(l => {
     l.style.opacity = 1;
-    l.style.fill = '#aaa'; 
+    l.style.fill = '#000'; 
   });
   
   tooltip.classList.remove('tooltip-visible');

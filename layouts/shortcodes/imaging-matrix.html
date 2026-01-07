@@ -1,5 +1,4 @@
-{{ $csvFile := "imaging_atlas.csv" }}
-{{ $csvPath := printf "/%s" $csvFile }}
+{{ $csvPath := "imaging_atlas.csv" | relURL }}
 
 <div class="neon-atlas-wrapper">
   

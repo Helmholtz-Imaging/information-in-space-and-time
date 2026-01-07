@@ -1,0 +1,429 @@
+modalities:
+  - name: Confocal Microscopy
+    domain: [Health]
+    physics_carrier: Photon
+    spectral_range: Visible
+    scale_spatial: Micro
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Excitation
+    time_dependence: Static
+    description: 3D reconstruction of cells using fluorescence.
+
+  - name: Synthetic Aperture Radar (SAR)
+    domain: [Earth & Environment]
+    physics_carrier: Photon
+    spectral_range: Microwave
+    scale_spatial: Macro-Kilo
+    topology: Raster (2D)
+    density: Complex
+    mechanism: Active
+    time_dependence: Time-Lapse
+    description: Earth observation using radar echoes.
+
+  - name: Diffusion Tensor Imaging (MRI)
+    domain: [Health]
+    physics_carrier: Magnetic Field
+    spectral_range: Radio (RF)
+    scale_spatial: Milli
+    topology: Voxel (3D)
+    density: Tensor
+    mechanism: Active
+    time_dependence: Static
+    description: Mapping water diffusion in brain tissue.
+
+  - name: Lidar
+    domain: [Space & Transport]
+    physics_carrier: Photon
+    spectral_range: Infrared
+    scale_spatial: Macro
+    topology: Point Cloud
+    density: Scalar
+    mechanism: Active
+    time_dependence: Dynamic
+    description: Laser ranging for 3D topology.
+
+  - name: Cryo-EM
+    domain: [Matter]
+    physics_carrier: Electron
+    spectral_range: High Energy
+    scale_spatial: Nano
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Transmission
+    time_dependence: Static
+    description: Molecular structure reconstruction.
+
+  - name: Seismic Tomography
+    domain: [Earth & Environment]
+    physics_carrier: Acoustic
+    spectral_range: Infrasound
+    scale_spatial: Kilo-Cosmic
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Active
+    time_dependence: Static
+    description: Imaging subsurface rock structures.
+
+  - name: Event Camera
+    domain: [Information]
+    physics_carrier: Photon
+    spectral_range: Visible
+    scale_spatial: Macro
+    topology: Sparse Events
+    density: Vector
+    mechanism: Passive
+    time_dependence: Dynamic
+    description: Neuromorphic vision measuring changes only.
+
+  - name: Synchrotron Tomography
+    domain: [Matter, Health, Energy]
+    physics_carrier: Photon
+    spectral_range: X-Ray
+    scale_spatial: Micro
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Transmission
+    time_dependence: Static
+    description: High-resolution 3D imaging of materials and energy devices.
+
+  - name: Neutron Imaging
+    domain: [Matter, Energy]
+    physics_carrier: Neutron
+    spectral_range: Thermal
+    scale_spatial: Milli
+    topology: Raster (2D)
+    density: Scalar
+    mechanism: Transmission
+    time_dependence: Static
+    description: Visualizing hydrogen/water in fuel cells and batteries.
+
+  - name: PET Scan
+    domain: [Health, Earth & Environment]
+    physics_carrier: Photon
+    spectral_range: Gamma
+    scale_spatial: Milli
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Excitation
+    time_dependence: Dynamic
+    description: Positron emission tomography for metabolic tracking in humans and plants.
+
+  - name: Optical Coherence Tomography
+    domain: [Health]
+    physics_carrier: Photon
+    spectral_range: Near-IR
+    scale_spatial: Milli
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Active
+    time_dependence: Dynamic
+    description: Cross-sectional imaging of biological tissues.
+
+  - name: Atomic Force Microscopy
+    domain: [Matter, Energy]
+    physics_carrier: Mechanical
+    spectral_range: n/a
+    scale_spatial: Nano
+    topology: Point Cloud
+    density: Scalar
+    mechanism: Active
+    time_dependence: Static
+    description: Surface topography of materials and battery interfaces.
+
+  - name: Single Molecule Localization
+    domain: [Health]
+    physics_carrier: Photon
+    spectral_range: Visible
+    scale_spatial: Nano
+    topology: Point Cloud
+    density: Scalar
+    mechanism: Excitation
+    time_dependence: Static
+    description: Super-resolution microscopy breaking diffraction limit.
+
+  - name: Hyperspectral Imaging
+    domain: [Earth & Environment, Information, Energy]
+    physics_carrier: Photon
+    spectral_range: Visible-IR
+    scale_spatial: Macro-Kilo
+    topology: Voxel (3D)
+    density: Spectral
+    mechanism: Passive
+    time_dependence: Static
+    description: Spectral imaging for mineral exploration and environment.
+
+  - name: Gravitational Wave Detection
+    domain: [Space & Transport]
+    physics_carrier: Gravitational Field
+    spectral_range: n/a
+    scale_spatial: Cosmic
+    topology: Function/Model
+    density: Tensor
+    mechanism: Passive
+    time_dependence: Dynamic
+    description: Detection of spacetime ripples.
+
+  - name: Radio Interferometry
+    domain: [Space & Transport]
+    physics_carrier: Photon
+    spectral_range: Radio
+    scale_spatial: Cosmic
+    topology: Function/Model
+    density: Complex
+    mechanism: Passive
+    time_dependence: Static
+    description: Very long baseline interferometry (VLBI).
+
+  - name: Ultrasound Doppler
+    domain: [Health]
+    physics_carrier: Acoustic
+    spectral_range: Ultrasonic
+    scale_spatial: Milli
+    topology: Raster (2D)
+    density: Vector
+    mechanism: Active
+    time_dependence: Dynamic
+    description: Blood flow velocity measurement.
+
+  - name: Electron Backscatter Diffraction
+    domain: [Matter]
+    physics_carrier: Electron
+    spectral_range: High Energy
+    scale_spatial: Micro
+    topology: Raster (2D)
+    density: Vector
+    mechanism: Active
+    time_dependence: Static
+    description: Crystal orientation mapping in materials.
+
+  - name: Fluorescence Lifetime Imaging
+    domain: [Health]
+    physics_carrier: Photon
+    spectral_range: Visible
+    scale_spatial: Micro
+    topology: Raster (2D)
+    density: Scalar
+    mechanism: Excitation
+    time_dependence: Dynamic
+    description: Fluorescence lifetime imaging.
+
+  - name: Connectomics
+    domain: [Information, Health]
+    physics_carrier: Magnetic Field
+    spectral_range: Radio (RF)
+    scale_spatial: Micro
+    topology: Graph/Relational
+    density: Graph
+    mechanism: Active
+    time_dependence: Static
+    description: Neural connectivity mapping.
+
+  - name: Scanning Transmission X-ray Microscopy (STXM)
+    domain: [Energy, Matter]
+    physics_carrier: Photon
+    spectral_range: X-Ray
+    scale_spatial: Nano
+    topology: Raster (2D)
+    density: Spectral
+    mechanism: Transmission
+    time_dependence: Static
+    description: Chemical mapping of energy materials using soft X-rays.
+
+  - name: Ocean Color Remote Sensing
+    domain: [Earth & Environment, Information]
+    physics_carrier: Photon
+    spectral_range: Visible-IR
+    scale_spatial: Macro-Kilo
+    topology: Raster (2D)
+    density: Spectral
+    mechanism: Passive
+    time_dependence: Time-Lapse
+    description: Satellite imaging of ocean constituents like chlorophyll.
+
+  - name: Optoacoustic Tomography
+    domain: [Health, Matter]
+    physics_carrier: Acoustic
+    spectral_range: Ultrasonic
+    scale_spatial: Milli
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Excitation
+    time_dependence: Dynamic
+    description: Hybrid imaging using light excitation and ultrasound detection.
+
+  - name: Magnetic Particle Imaging
+    domain: [Health]
+    physics_carrier: Magnetic Field
+    spectral_range: Radio (RF)
+    scale_spatial: Milli
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Active
+    time_dependence: Dynamic
+    description: Tracer-based imaging of magnetic nanoparticles.
+
+  - name: Radio Tomography (Ionosphere)
+    domain: [Space & Transport, Earth & Environment]
+    physics_carrier: Photon
+    spectral_range: Radio
+    scale_spatial: Kilo-Cosmic
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Transmission
+    time_dependence: Dynamic
+    description: Plasma density mapping in ionosphere/magnetosphere.
+
+  - name: Atom Probe Tomography
+    domain: [Matter]
+    physics_carrier: Ion
+    spectral_range: n/a
+    scale_spatial: Nano
+    topology: Point Cloud
+    density: Spectral
+    mechanism: Excitation
+    time_dependence: Static
+    description: 3D reconstruction of individual atoms via field evaporation.
+
+  - name: X-ray Astronomy
+    domain: [Space & Transport]
+    physics_carrier: Photon
+    spectral_range: X-Ray
+    scale_spatial: Cosmic
+    topology: Raster (2D)
+    density: Spectral
+    mechanism: Passive
+    time_dependence: Static
+    description: Imaging high-energy cosmic sources like black holes.
+
+  - name: Ptychography
+    domain: [Information, Matter]
+    physics_carrier: Photon
+    spectral_range: X-Ray
+    scale_spatial: Nano
+    topology: Raster (2D)
+    density: Complex
+    mechanism: Transmission
+    time_dependence: Static
+    description: Lensless computational imaging from diffraction patterns.
+
+  - name: Muon Tomography
+    domain: [Earth & Environment, Matter]
+    physics_carrier: Muon
+    spectral_range: High Energy
+    scale_spatial: Macro
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Transmission
+    time_dependence: Static
+    description: Imaging large dense structures using cosmic muons.
+
+  - name: Terahertz Imaging
+    domain: [Matter, Health]
+    physics_carrier: Photon
+    spectral_range: Terahertz
+    scale_spatial: Milli
+    topology: Raster (2D)
+    density: Scalar
+    mechanism: Transmission
+    time_dependence: Static
+    description: Non-destructive testing using T-rays.
+
+  - name: Bioluminescence Imaging
+    domain: [Health]
+    physics_carrier: Photon
+    spectral_range: Visible
+    scale_spatial: Milli
+    topology: Raster (2D)
+    density: Scalar
+    mechanism: Passive
+    time_dependence: Dynamic
+    description: Imaging metabolic activity via biochemical light emission.
+
+  - name: Magnetic Resonance Imaging (MRI)
+    domain: [Health, Earth & Environment]
+    physics_carrier: Magnetic Field
+    spectral_range: Radio (RF)
+    scale_spatial: Milli
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Active
+    time_dependence: Dynamic
+    description: Soft tissue imaging; also used for plant root systems in soil.
+
+  - name: Electroluminescence Imaging
+    domain: [Energy]
+    physics_carrier: Photon
+    spectral_range: Near-IR
+    scale_spatial: Milli
+    topology: Raster (2D)
+    density: Scalar
+    mechanism: Excitation
+    time_dependence: Static
+    description: Mapping radiative recombination in solar cells to detect defects.
+
+  - name: Photoluminescence Imaging
+    domain: [Energy, Matter]
+    physics_carrier: Photon
+    spectral_range: Near-IR
+    scale_spatial: Micro
+    topology: Raster (2D)
+    density: Scalar
+    mechanism: Excitation
+    time_dependence: Time-Lapse
+    description: Spatially resolved measurement of charge carrier lifetime in semiconductors.
+
+  - name: Neutron Depth Profiling
+    domain: [Energy, Matter]
+    physics_carrier: Neutron
+    spectral_range: Thermal
+    scale_spatial: Micro
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Transmission
+    time_dependence: Dynamic
+    description: Non-destructive 3D mapping of lithium distribution in battery electrodes.
+
+  - name: Kelvin Probe Force Microscopy
+    domain: [Energy, Matter]
+    physics_carrier: Electric Field
+    spectral_range: n/a
+    scale_spatial: Nano
+    topology: Raster (2D)
+    density: Scalar
+    mechanism: Active
+    time_dependence: Static
+    description: Nanoscale mapping of surface potential and work function in solar/battery materials.
+
+  - name: Computed Laminography
+    domain: [Energy, Matter]
+    physics_carrier: Photon
+    spectral_range: X-Ray
+    scale_spatial: Micro
+    topology: Voxel (3D)
+    density: Scalar
+    mechanism: Transmission
+    time_dependence: Static
+    description: 3D imaging of flat extended objects like pouch cells or fuel cell layers.
+
+  - name: ToF-SIMS Imaging
+    domain: [Energy, Matter]
+    physics_carrier: Ion
+    spectral_range: n/a
+    scale_spatial: Nano
+    topology: Voxel (3D)
+    density: Spectral
+    mechanism: Excitation
+    time_dependence: Static
+    description: Chemical 3D imaging of battery interfaces (SEI) using secondary ions.
+
+  - name: Operando X-ray Radiography
+    domain: [Energy]
+    physics_carrier: Photon
+    spectral_range: X-Ray
+    scale_spatial: Milli
+    topology: Raster (2D)
+    density: Scalar
+    mechanism: Transmission
+    time_dependence: Dynamic
+    description: Dynamic visualization of fluid flows in liquid metal batteries.

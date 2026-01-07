@@ -50,6 +50,20 @@ fetch('imaging_atlas.csv')
       return a.name.localeCompare(b.name);
     });
     renderNeonPlot(rawData);
+    
+    // Handle window resize with debouncing
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        const svg = document.getElementById('neon-plot');
+        if (svg) {
+          // Clear existing content
+          svg.innerHTML = '';
+          renderNeonPlot(rawData);
+        }
+      }, 250);
+    });
   });
 
 function parseCSV(csvText) {
@@ -92,9 +106,23 @@ function renderNeonPlot(data) {
   const calcHeight = Math.max(minHeight, (data.length * rowHeight) + 100);
   svg.setAttribute('height', calcHeight);
 
-  const width = svg.parentElement.clientWidth; 
-  const margin = { top: 60, right: 200, bottom: 40, left: 520 }; // Increased left margin for more name space 
-  const w = width;
+  const containerWidth = svg.parentElement.clientWidth;
+  const minWidth = 1200; // Minimum required width
+  const width = Math.max(containerWidth, minWidth);
+  svg.setAttribute('width', width);
+  svg.style.minWidth = minWidth + 'px';
+  
+  // Responsive margins - scale down on smaller screens
+  const scaleFactor = Math.min(1, containerWidth / minWidth);
+  const baseMargin = { top: 60, right: 80, bottom: 40, left: 520 };
+  const margin = {
+    top: baseMargin.top * scaleFactor,
+    right: baseMargin.right * scaleFactor,
+    bottom: baseMargin.bottom * scaleFactor,
+    left: Math.max(300, baseMargin.left * scaleFactor)
+  };
+  
+  const w = width - margin.left - margin.right;
   const h = calcHeight - margin.top - margin.bottom;
 
   // Scales
@@ -320,8 +348,7 @@ function renderNeonPlot(data) {
   // Name Labels
   data.forEach((item, idx) => {
     const startY = getNameY(idx);
-    const textGap = 550; // Increased gap for more space between names and physics labels
-    const textX = 20;
+    const textX = Math.max(10, margin.left * 0.04); // Responsive positioning
     
     const textEl = createSVG(svg, 'text', {
       x: textX, 

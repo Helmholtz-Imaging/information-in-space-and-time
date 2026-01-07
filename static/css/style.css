@@ -87,7 +87,10 @@ header h1 {
 
 .viz-stage {
     position: relative;
-    overflow: visible;
+    overflow-x: auto;
+    overflow-y: visible;
+    min-width: 1200px;
+    width: 100%;
 }
 
 .axis-line {

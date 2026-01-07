@@ -1,0 +1,215 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --bg-deep: #05050500; 
+    --text-bright: #ffffff;
+    --text-dim: #888;
+    --line-inactive: #1a1a1a;
+
+    /* Neon Palette */
+    --c-health: #ff2a6d;      
+    --c-matter: #05d9e8;      
+    --c-earth: #00ff9f;       
+    --c-info: #d1f7ff;        
+    --c-space: #7700ff;       
+    --c-transport: #ffb86c;   
+    --c-default: #888;
+}
+
+body {
+    margin: 0;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    background-color: #050505;
+    color: var(--text-bright);
+}
+
+main {
+    max-width: 100%;
+    padding: 0 20px;
+}
+
+header {
+    padding: 30px 30px;
+    text-align: left;
+}
+
+header h1 {
+    margin: 0;
+    font-weight: 700;
+    font-size: clamp(1.5rem, 5vw, 3.5rem);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: linear-gradient(120deg, var(--c-info), var(--c-health), var(--c-space));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 18px rgba(5, 217, 232, 0.35));
+    white-space: normal;
+}
+
+.neon-atlas-wrapper {
+    background-color: var(--bg-deep);
+    color: var(--text-bright);
+    padding: 20px 0;
+    width: 100%;
+    overflow: visible;
+}
+
+.controls-row {
+    margin-bottom: 30px;
+    padding-left: 10px;
+    border-bottom: 1px solid #1a1a1a;
+    padding-bottom: 15px;
+}
+
+.domain-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.filter-pill {
+    background: transparent;
+    border: 1px solid #333;
+    color: #666;
+    padding: 6px 14px;
+    font-size: 1.15rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 4px;
+}
+
+.filter-pill:hover,
+.filter-pill.active {
+    border-color: currentColor;
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.viz-stage {
+    position: relative;
+    overflow: visible;
+}
+
+.axis-line {
+    stroke: #333;
+    stroke-width: 1;
+    stroke-dasharray: 2 4;
+}
+
+.axis-label {
+    fill: #aaa;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-anchor: middle;
+    stroke: #050505;
+    stroke-width: 4px;
+    paint-order: stroke fill;
+}
+
+.tick-label {
+    fill: #ddd;
+    font-size: 15px;
+    cursor: default;
+    transition: fill 0.2s;
+    font-weight: 600;
+    stroke: #00000050;
+    stroke-width: 15px;
+    paint-order: stroke fill;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tick-label:hover {
+    fill: #fff;
+}
+
+.name-label {
+    font-size: 15px;
+    fill: #aaa;
+    cursor: pointer;
+    transition: opacity 0.5s ease, fill 0.3s ease;
+    alignment-baseline: middle;
+}
+
+.name-label:hover {
+    fill: #fff;
+    font-weight: bold;
+}
+
+.data-path {
+    fill: none;
+    stroke-linecap: round;
+    mix-blend-mode: screen;
+    pointer-events: none;
+    transition: stroke-opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                stroke-width 0.4s ease,
+                stroke-dashoffset 2s ease-in-out;
+}
+
+.hit-path {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 20px;
+    cursor: pointer;
+    pointer-events: stroke;
+}
+
+.faded-out {
+    stroke-opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.text-faded-out {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.dimmed {
+    stroke: var(--line-inactive) !important;
+    stroke-opacity: 0.1;
+    stroke-width: 1;
+}
+
+.highlighted {
+    stroke-opacity: 0.6;
+    stroke-width: 1.5;
+}
+
+.active-hover {
+    stroke-opacity: 1 !important;
+    stroke-width: 3 !important;
+    filter: drop-shadow(0 0 8px currentColor);
+}
+
+.tooltip-box {
+    position: absolute;
+    display: none;
+    background: rgba(10, 10, 15, 0.98);
+    border: 1px solid #555;
+    padding: 15px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 1);
+    width: 280px;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.tooltip-visible {
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .tick-label {
+        font-size: 12px;
+    }
+    .name-label {
+        font-size: 12px;
+    }
+}

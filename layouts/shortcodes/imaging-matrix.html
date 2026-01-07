@@ -1,0 +1,341 @@
+{{ $csvFile := "imaging_atlas.csv" }}
+{{ $csvPath := printf "/%s" $csvFile }}
+
+<div class="neon-atlas-wrapper">
+  
+  <div class="controls-row">
+    <div class="domain-filters" id="filter-container"></div>
+  </div>
+
+  <div class="viz-stage">
+    <svg id="neon-plot" width="100%" height="900"></svg>
+  </div>
+
+</div>
+
+<script>
+const config = {
+  colors: {
+    'Health': '#ff2a6d',
+    'Matter': '#05d9e8',
+    'Earth & Environment': '#00ff9f',
+    'Information': '#d1f7ff',
+    'Space': '#7700ff',
+    'Transport': '#ffb86c',
+    'Default': '#888888'
+  },
+  axes: [
+    { id: 'physics_carrier', label: 'PHYSICS', 
+      values: ['Photon', 'Electron', 'Neutron', 'Magnetic Field', 'Acoustic', 'Mechanical', 'Gravitational Field'] },
+    { id: 'mechanism', label: 'MECHANISM', 
+      values: ['Excitation', 'Transmission', 'Active', 'Passive'] },
+    { id: 'scale_spatial', label: 'SCALE', 
+      values: ['Nano', 'Micro', 'Milli', 'Macro', 'Kilo', 'Cosmic'] },
+    { id: 'topology', label: 'TOPOLOGY', 
+      values: ['Raster (2D)', 'Voxel (3D)', 'Point Cloud', 'Graph/Relational', 'Sparse Events', 'Function/Model'] },
+    { id: 'density', label: 'DENSITY', 
+      values: ['Scalar', 'Vector', 'Vector (x,y,t,p)', 'Tensor', 'Spectral', 'Complex (Phase/Amp)', 'Graph'] }
+  ]
+};
+
+let rawData = [];
+
+fetch('{{ $csvPath }}')
+  .then(r => r.text())
+  .then(csv => {
+    rawData = parseCSV(csv);
+    rawData = [...new Map(rawData.map(item => [item.name, item])).values()];
+    rawData.sort((a, b) => {
+      const pa = config.axes[0].values.indexOf(a.physics_carrier);
+      const pb = config.axes[0].values.indexOf(b.physics_carrier);
+      const primaryA = pa === -1 ? Number.MAX_SAFE_INTEGER : pa;
+      const primaryB = pb === -1 ? Number.MAX_SAFE_INTEGER : pb;
+      if (primaryA !== primaryB) return primaryA - primaryB;
+      return a.name.localeCompare(b.name);
+    });
+    renderNeonPlot(rawData);
+  });
+
+function parseCSV(csvText) {
+  const lines = csvText.split('\n').filter(l => l.trim().length > 0);
+  return lines.slice(1).map(line => {
+    const parts = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+    const clean = parts.map(p => p.replace(/"/g, '').trim());
+    return {
+      name: clean[0],
+      domain: clean[1],
+      physics_carrier: clean[2],
+      scale_spatial: clean[4],
+      topology: clean[5],
+      density: clean[6],
+      mechanism: clean[7],
+      description: clean[9]
+    };
+  });
+}
+
+function renderNeonPlot(data) {
+  const svg = document.getElementById('neon-plot');
+  const rowHeight = 32; 
+  const minHeight = 600;
+  const calcHeight = Math.max(minHeight, (data.length * rowHeight) + 100);
+  svg.setAttribute('height', calcHeight);
+
+  const width = svg.parentElement.clientWidth; 
+  const margin = { top: 60, right: 200, bottom: 40, left: 420 }; 
+  const w = width - margin.left - margin.right;
+  const h = calcHeight - margin.top - margin.bottom;
+
+  // Scales
+  const xStep = w / (config.axes.length - 1);
+  const getX = (axisIdx) => margin.left + (axisIdx * xStep);
+
+  const yScales = {};
+  config.axes.forEach(axis => {
+    yScales[axis.id] = (val) => {
+      let idx = axis.values.indexOf(val);
+      if (idx === -1) idx = axis.values.length; 
+      const step = h / (axis.values.length); 
+      return margin.top + (idx * step) + (step/2);
+    };
+  });
+
+  const getNameY = (index) => margin.top + (index * (h / data.length));
+
+  // 1. BACKGROUND AXES
+  config.axes.forEach((axis, i) => {
+    const x = getX(i);
+    createSVG(svg, 'line', { x1: x, y1: margin.top, x2: x, y2: margin.top + h, class: 'axis-line' });
+  });
+
+  // 2. DATA PATHS
+  data.forEach((item, idx) => {
+    const color = config.colors[item.domain] || config.colors['Default'];
+    const startY = getNameY(idx);
+    const textGap = 120;
+    const textX = margin.left - textGap;
+    const pathStartX = textX + 15;
+
+    let pathD = `M ${pathStartX} ${startY}`;
+    
+    config.axes.forEach((axis, axIdx) => {
+      const x = getX(axIdx);
+      const y = yScales[axis.id](item[axis.id]);
+      let prevX, prevY;
+      if (axIdx === 0) {
+        prevX = pathStartX;
+        prevY = startY;
+      } else {
+        prevX = getX(axIdx - 1);
+        const prevAxis = config.axes[axIdx - 1];
+        prevY = yScales[prevAxis.id](item[prevAxis.id]);
+      }
+      const cp1x = prevX + (x - prevX) * 0.5;
+      const cp2x = prevX + (x - prevX) * 0.5;
+      pathD += ` C ${cp1x} ${prevY}, ${cp2x} ${y}, ${x} ${y}`;
+    });
+
+    // A. VISUAL PATH (Thin, Neon)
+    const visualPath = createSVG(svg, 'path', {
+      d: pathD,
+      class: 'data-path highlighted',
+      stroke: color,
+      'data-domain': item.domain,
+      'data-id': idx
+    });
+
+    // *** ENTRANCE ANIMATION ***
+    // 1. Get total length of the line
+    const length = visualPath.getTotalLength();
+    // 2. Set the dasharray and offset to the length (hides line)
+    visualPath.style.strokeDasharray = length;
+    visualPath.style.strokeDashoffset = length;
+    
+    // 3. Trigger layout reflow to ensure start state is rendered
+    visualPath.getBoundingClientRect();
+    
+    // 4. Animate to 0 offset (draws line)
+    // We add a slight random delay so they don't all start exactly at once
+    setTimeout(() => {
+      visualPath.style.strokeDashoffset = '0';
+    }, idx * 10); // 10ms stagger per line
+
+    // B. GHOST PATH (Thick, Invisible, Interactive)
+    const hitPath = createSVG(svg, 'path', {
+      d: pathD,
+      class: 'hit-path',
+      'data-domain': item.domain,
+      'data-id': idx
+    });
+    
+    attachEvents(hitPath, item, color, idx);
+  });
+
+  // 3. LABELS (Foreground)
+  config.axes.forEach((axis, i) => {
+    const x = getX(i);
+    createSVG(svg, 'text', { x: x, y: margin.top - 25, class: 'axis-label' }).textContent = axis.label;
+    axis.values.forEach(val => {
+      const y = yScales[axis.id](val);
+      createSVG(svg, 'text', { x: x + 10, y: y + 4, class: 'tick-label' }).textContent = val;
+    });
+  });
+
+  // Name Labels
+  data.forEach((item, idx) => {
+    const startY = getNameY(idx);
+    const textGap = 120;
+    const textX = margin.left - textGap;
+    
+    const textEl = createSVG(svg, 'text', {
+      x: textX, 
+      y: startY,
+      class: 'name-label',
+      'text-anchor': 'end',
+      'data-id': idx,
+      'data-domain': item.domain // Store domain for filtering
+    });
+    textEl.textContent = item.name;
+    
+    const color = config.colors[item.domain] || config.colors['Default'];
+    attachEvents(textEl, item, color, idx);
+  });
+
+  buildFilters(data);
+}
+
+function attachEvents(el, item, color, idx) {
+  const triggerHover = (e) => {
+    // Dim all visual paths (but not the hit paths, those stay invisible)
+    document.querySelectorAll('.data-path').forEach(p => p.classList.add('dimmed'));
+    document.querySelectorAll('.name-label').forEach(l => l.style.opacity = 0.3);
+    
+    // Highlight specific ID
+    const path = document.querySelector(`.data-path[data-id="${idx}"]`);
+    const label = document.querySelector(`.name-label[data-id="${idx}"]`);
+    
+    if (path) {
+      path.classList.remove('dimmed');
+      path.classList.add('active-hover');
+      // Ensure highlighted line moves to visual top (optional in SVG)
+      // path.parentElement.appendChild(path); 
+    }
+    if (label) {
+      label.style.opacity = 1;
+      label.style.fill = '#fff';
+    }
+    
+    showTooltip(e, item, color);
+  };
+
+  el.addEventListener('mouseenter', triggerHover);
+  el.addEventListener('mouseleave', clearHover);
+}
+
+function createSVG(parent, type, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', type);
+  for (let k in attrs) el.setAttribute(k, attrs[k]);
+  parent.appendChild(el);
+  return el;
+}
+
+function buildFilters(data) {
+  const domains = [...new Set(data.map(d => d.domain))].sort();
+  const filterBox = document.getElementById('filter-container');
+  filterBox.innerHTML = ''; 
+  
+  const allBtn = document.createElement('button');
+  allBtn.className = 'filter-pill active';
+  allBtn.textContent = 'All';
+  allBtn.style.color = '#fff';
+  allBtn.onclick = () => filterGraph('all', allBtn);
+  filterBox.appendChild(allBtn);
+
+  domains.forEach(d => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-pill';
+    btn.textContent = d;
+    btn.style.color = config.colors[d] || '#888';
+    btn.onclick = () => filterGraph(d, btn);
+    filterBox.appendChild(btn);
+  });
+}
+
+function filterGraph(domain, btn) {
+  document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  const visualPaths = document.querySelectorAll('.data-path');
+  const hitPaths = document.querySelectorAll('.hit-path');
+  const labels = document.querySelectorAll('.name-label');
+
+  // Helper to toggle class based on domain
+  const updateVisibility = (elements, isText) => {
+    elements.forEach(el => {
+      const d = el.getAttribute('data-domain');
+      const shouldShow = (domain === 'all' || d === domain);
+      
+      if (shouldShow) {
+        if (isText) el.classList.remove('text-faded-out');
+        else el.classList.remove('faded-out');
+      } else {
+        if (isText) el.classList.add('text-faded-out');
+        else el.classList.add('faded-out');
+      }
+    });
+  };
+
+  updateVisibility(visualPaths, false);
+  updateVisibility(hitPaths, false); // Ghost paths must also "leave" to avoid invisible clicks
+  updateVisibility(labels, true);
+}
+
+const tooltip = document.getElementById('neon-tooltip');
+
+function showTooltip(e, item, color) {
+  tooltip.style.display = 'block';
+  // Use timeout to allow display:block to render before adding opacity class
+  requestAnimationFrame(() => {
+    tooltip.classList.add('tooltip-visible');
+  });
+  
+  tooltip.style.borderColor = color;
+  tooltip.innerHTML = `
+    <strong style="color:${color}; font-size: 0.9rem;">${item.name}</strong>
+    <div style="margin-top:2px; color:#aaa; font-size:0.65rem;">${item.domain.toUpperCase()}</div>
+    <hr style="border:0; border-top:1px solid #333; margin:6px 0;">
+    <div style="line-height:1.3; color:#ddd;">${item.description}</div>
+  `;
+  
+  const tooltipWidth = 280; 
+  const mouseX = e.pageX;
+  const mouseY = e.pageY;
+  const windowWidth = window.innerWidth;
+  
+  if (mouseX > windowWidth * 0.6) {
+    tooltip.style.left = (mouseX - tooltipWidth - 20) + 'px';
+  } else {
+    tooltip.style.left = (mouseX + 20) + 'px';
+  }
+  tooltip.style.top = (mouseY + 20) + 'px';
+}
+
+function clearHover() {
+  document.querySelectorAll('.data-path').forEach(p => {
+    p.classList.remove('dimmed');
+    p.classList.remove('active-hover');
+  });
+  document.querySelectorAll('.name-label').forEach(l => {
+    l.style.opacity = 1;
+    l.style.fill = '#aaa'; 
+  });
+  
+  // Fade out tooltip
+  tooltip.classList.remove('tooltip-visible');
+  setTimeout(() => {
+    if (!tooltip.classList.contains('tooltip-visible')) {
+      tooltip.style.display = 'none';
+    }
+  }, 200);
+}
+</script>
